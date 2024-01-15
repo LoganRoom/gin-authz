@@ -47,6 +47,7 @@ fmt.Println("path: ", path)
 				fmt.Println("roles: ", role)
         allowed, err := a.enforcer.Enforce(role, path, method)
         if err != nil {
+					fmt.Println("err: ", err)
             panic(err)
         }
         if allowed {
@@ -57,7 +58,7 @@ fmt.Println("path: ", path)
 
     // If no role has permission, return false (permission denied)
 		fmt.Println("Permission denied")
-		
+		 
     return false
 }
 
