@@ -6,6 +6,7 @@ import (
 
     "github.com/casbin/casbin/v2"
     "github.com/gin-gonic/gin"
+		"fmt"
 )
 
 // CustomAuthorizer is a custom authorizer that checks roles in the Gin context for permissions.
@@ -38,10 +39,12 @@ func (a *CustomAuthorizer) CheckPermission(c *gin.Context) bool {
 
     // Get the HTTP method and URL path from the Gin context
     method := c.Request.Method
+		fmt.Println("method: ", method)
     path := c.FullPath()
-
+fmt.Println("path: ", path)
     // Check each role for permission
     for _, role := range roleSlice {
+				fmt.Println("roles: ", role)
         allowed, err := a.enforcer.Enforce(role, path, method)
         if err != nil {
             panic(err)
@@ -53,6 +56,8 @@ func (a *CustomAuthorizer) CheckPermission(c *gin.Context) bool {
     }
 
     // If no role has permission, return false (permission denied)
+		fmt.Println("Permission denied")
+		
     return false
 }
 
