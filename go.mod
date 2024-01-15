@@ -1,4 +1,4 @@
-module github.com/EAS-Rhys/authz
+module github.com/EAS-Rhys/gin-authz
 
 go 1.20
 
