@@ -14,52 +14,63 @@ type CustomAuthorizer struct {
     enforcer *casbin.Enforcer
 }
 
-// NewCustomAuthorizer returns a custom authorizer that uses a Casbin enforcer as input.
-func NewCustomAuthorizer(e *casbin.Enforcer) gin.HandlerFunc {
-    a := &CustomAuthorizer{enforcer: e}
-
-    return func(c *gin.Context) {
-        if !a.CheckPermission(c) {
-            a.RequirePermission(c)
-        }
-    }
-}
-
 // CheckPermission checks if the roles in the Gin context have permission for the requested URL and HTTP verb.
 func (a *CustomAuthorizer) CheckPermission(c *gin.Context) bool {
-    // Get roles from the Gin context, assuming roles are stored as a comma-delimited string
-    roles, exists := c.Get("roles")
-    if !exists {
-        // No roles found in the context, return false (permission denied)
-        return false
-    }
+	// Get roles from the Gin context, assuming roles are stored as a comma-delimited string
+	roles, exists := c.Get("roles")
+	if !exists {
+		// No roles found in the context, return false (permission denied)
+		return false
+	}
 
-    // Convert roles to a slice of strings
-    roleSlice := strings.Split(roles.(string), ",")
+	// Convert roles to a slice of strings
+	roleSlice := strings.Split(roles.(string), ",")
 
-    // Get the HTTP method and URL path from the Gin context
-    method := c.Request.Method
-		fmt.Println("method: ", method)
-    path := c.FullPath()
-fmt.Println("path: ", path)
-    // Check each role for permission
-    for _, role := range roleSlice {
-				fmt.Println("roles: ", role)
-        allowed, err := a.enforcer.Enforce(role, path, method)
-        if err != nil {
-					fmt.Println("err: ", err)
-            panic(err)
+	// Get the HTTP method from the Gin context
+	method := c.Request.Method
+
+	// Extract and validate the orgid from the path
+	path := c.Request.URL.Path
+    orgID := c.Get("orgId")
+	orgID, newPath, valid := validateAndStripOrgID(path,orgID)
+	if !valid {
+		// orgID is not valid, return false (permission denied)
+		fmt.Println("Invalid orgID")
+		return false
+	}
+
+	// Check each role for permission on the new, stripped path
+	for _, role := range roleSlice {
+		allowed, err := a.enforcer.Enforce(role, newPath, method)
+		if err != nil {
+			fmt.Println("Error during enforcement: ", err)
+			panic(err)
+		}
+		if allowed {
+			// If any role has permission, return true (permission granted)
+			return true
+		}
+	}
+
+	// If no role has permission, return false (permission denied)
+	fmt.Println("Permission denied")
+	return false
+}
+
+// validateAndStripOrgID validates the orgID and returns the stripped path if valid
+func validateAndStripOrgID(path string, userOrgId) (orgID, newPath string, valid bool) {
+	// Example path: /v1/organisations/12345/users
+	segments := strings.Split(path, "/")
+	if len(segments) >= 4 && segments[1] == "v1" && segments[2] == "organisations" {
+		orgID := segments[3]
+        if orgID != userOrgId {
+            return "", "", false
         }
-        if allowed {
-            // If any role has permission, return true (permission granted)
-            return true
-        }
-    }
-
-    // If no role has permission, return false (permission denied)
-		fmt.Println("Permission denied")
-		 
-    return false
+		valid = true // orgID is valid
+		newPath := "/" + strings.Join(segments[4:], "/") // Reconstruct path without the orgID part
+		return orgID, newPath, valid
+	}
+	return "", "", false
 }
 
 // RequirePermission returns the 403 Forbidden status to the client
