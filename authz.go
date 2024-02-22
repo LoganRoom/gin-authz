@@ -1,17 +1,17 @@
 package authz
 
 import (
-    "net/http"
-    "strings"
+	"net/http"
+	"strings"
 
-    "github.com/casbin/casbin/v2"
-    "github.com/gin-gonic/gin"
-		"fmt"
+	"fmt"
+	"github.com/casbin/casbin/v2"
+	"github.com/gin-gonic/gin"
 )
 
 // CustomAuthorizer is a custom authorizer that checks roles in the Gin context for permissions.
 type CustomAuthorizer struct {
-    enforcer *casbin.Enforcer
+	enforcer *casbin.Enforcer
 }
 
 // CheckPermission checks if the roles in the Gin context have permission for the requested URL and HTTP verb.
@@ -31,18 +31,27 @@ func (a *CustomAuthorizer) CheckPermission(c *gin.Context) bool {
 
 	// Extract and validate the orgid from the path
 	path := c.Request.URL.Path
-    orgID, oExists := c.Get("orgId")
-    if !oExists {
-        // if roleslice contains admin, return true (permission granted)
-        for _, role := range roleSlice {
-            if role == "admin" {
-                return true
-            }
-        }
-        // if orgID is not set, return false (permission denied)
+	orgID, oExists := c.Get("orgId")
+	if !oExists {
+		// if roleslice contains admin, return true (permission granted)
+		for _, role := range roleSlice {
+			if role == "admin" {
+				return true
+			}
+		}
+		// if orgID is not set, return false (permission denied)
 		return false
 	}
-	orgID, newPath, valid := validateAndStripOrgID(path,orgID)
+
+	// Perform type assertion to convert orgID to a string
+	orgIDStr, ok := orgID.(string)
+	if !ok {
+		// orgID is not a string, handle the error, e.g., log, return false, etc.
+		fmt.Println("orgID is not a string")
+		return false
+	}
+
+	orgID, newPath, valid := validateAndStripOrgID(path, orgIDStr)
 	if !valid {
 		// orgID is not valid, return false (permission denied)
 		fmt.Println("Invalid orgID")
@@ -65,7 +74,7 @@ func (a *CustomAuthorizer) CheckPermission(c *gin.Context) bool {
 	// If no role has permission, return false (permission denied)
 	fmt.Println("Permission denied")
 	return false
-} 
+}
 
 // validateAndStripOrgID validates the orgID and returns the stripped path if valid
 func validateAndStripOrgID(path string, userOrgId string) (orgID, newPath string, valid bool) {
@@ -73,10 +82,10 @@ func validateAndStripOrgID(path string, userOrgId string) (orgID, newPath string
 	segments := strings.Split(path, "/")
 	if len(segments) >= 4 && segments[1] == "v1" && segments[2] == "organisations" {
 		orgID := segments[3]
-        if orgID != userOrgId {
-            return "", "", false
-        }
-		valid = true // orgID is valid
+		if orgID != userOrgId {
+			return "", "", false
+		}
+		valid = true                                     // orgID is valid
 		newPath := "/" + strings.Join(segments[4:], "/") // Reconstruct path without the orgID part
 		return orgID, newPath, valid
 	}
@@ -85,5 +94,5 @@ func validateAndStripOrgID(path string, userOrgId string) (orgID, newPath string
 
 // RequirePermission returns the 403 Forbidden status to the client
 func (a *CustomAuthorizer) RequirePermission(c *gin.Context) {
-    c.AbortWithStatus(http.StatusForbidden)
+	c.AbortWithStatus(http.StatusForbidden)
 }
