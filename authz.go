@@ -55,10 +55,10 @@ func (a *CustomAuthorizer) CheckPermission(c *gin.Context) bool {
 	// If no role has permission, return false (permission denied)
 	fmt.Println("Permission denied")
 	return false
-}
+} 
 
 // validateAndStripOrgID validates the orgID and returns the stripped path if valid
-func validateAndStripOrgID(path string, userOrgId) (orgID, newPath string, valid bool) {
+func validateAndStripOrgID(path string, userOrgId string) (orgID, newPath string, valid bool) {
 	// Example path: /v1/organisations/12345/users
 	segments := strings.Split(path, "/")
 	if len(segments) >= 4 && segments[1] == "v1" && segments[2] == "organisations" {
