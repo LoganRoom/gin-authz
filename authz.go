@@ -14,6 +14,16 @@ type CustomAuthorizer struct {
 	enforcer *casbin.Enforcer
 }
 
+// NewCustomAuthorizer returns a custom authorizer that uses a Casbin enforcer as input.
+func NewCustomAuthorizer(e *casbin.Enforcer) gin.HandlerFunc {
+    a := &CustomAuthorizer{enforcer: e}
+
+    return func(c *gin.Context) {
+        if !a.CheckPermission(c) {
+            a.RequirePermission(c)
+        }
+    }
+}
 // CheckPermission checks if the roles in the Gin context have permission for the requested URL and HTTP verb.
 func (a *CustomAuthorizer) CheckPermission(c *gin.Context) bool {
 	// Get roles from the Gin context, assuming roles are stored as a comma-delimited string
