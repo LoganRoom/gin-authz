@@ -36,6 +36,13 @@ func (a *CustomAuthorizer) CheckPermission(c *gin.Context) bool {
 	// Convert roles to a slice of strings
 	roleSlice := strings.Split(roles.(string), ",")
 
+	for _, role := range roleSlice {
+		if role == "admin" {
+			// if roleslice contains admin, return true (permission granted)
+			fmt.Println("Permission granted to ADMIN user")
+			return true
+		}
+	}
 	// Get the HTTP method from the Gin context
 	method := c.Request.Method
 
@@ -44,11 +51,7 @@ func (a *CustomAuthorizer) CheckPermission(c *gin.Context) bool {
 	orgID, oExists := c.Get("orgId")
 	if orgID == "0" || !oExists {
 		// if roleslice contains admin, return true (permission granted)
-		for _, role := range roleSlice {
-			if role == "admin" {
-				return true
-			}
-		}
+		
 		// if orgID is not set, return false (permission denied)
 		return false
 	}
