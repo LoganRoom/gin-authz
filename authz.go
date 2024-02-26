@@ -42,7 +42,7 @@ func (a *CustomAuthorizer) CheckPermission(c *gin.Context) bool {
 	// Extract and validate the orgid from the path
 	path := c.Request.URL.Path
 	orgID, oExists := c.Get("orgId")
-	if !oExists {
+	if orgID == "0" || !oExists {
 		// if roleslice contains admin, return true (permission granted)
 		for _, role := range roleSlice {
 			if role == "admin" {
