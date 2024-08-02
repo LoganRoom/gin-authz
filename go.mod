@@ -1,4 +1,4 @@
-module github.com/EAS-Rhys/gin-authz
+module github.com/Convert-Leads/gin-authz
 
 go 1.20
 
