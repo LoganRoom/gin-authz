@@ -1,4 +1,4 @@
-module github.com/Convert-Leads/gin-authz
+module github.com/LoganRoom/gin-authz
 
 go 1.20
 
